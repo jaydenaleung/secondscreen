@@ -1,0 +1,1 @@
+The EasyEDA file must be imported into Kicad by selecting "EasyEDA" instead of "Kicad" as the filetype filter when choosing which file to import. You will see this option on the popup Windows File Explorer after clicking the folder icon to add a new library in the symbol libraries in Kicad. See https://www.nextpcb.com/blog/how-to-import-altium-libraries-into-kicad for more.

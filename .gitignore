@@ -1,0 +1,11 @@
+.DS_Store
+
+.lck
+
+.bak
+
+**/fp-info-cache
+
+secondscreen-backups/
+
+**/#auto_saved_files#
