@@ -1,0 +1,2230 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Dyno - Dynamic Widget Pad</title>
+    <meta charset="UTF-8">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0f0f0f;
+            font-family: 'Inter', sans-serif;
+            color: #ffffff;
+        }
+
+        h1 {
+            position: absolute;
+            top: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 2.5em;
+            font-weight: 600;
+            color: #ffffff;
+            letter-spacing: -0.5px;
+        }
+
+        .wrapper {
+            display: flex;
+            align-items: center;
+            width: 85vw;
+            height: 65vh;
+            position: relative;
+            border-radius: 16px;
+            overflow: hidden;
+            background: #1a1a1a;
+            border: 1px solid #333;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+            border-radius: 16px;
+        }
+
+        canvas,
+        video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            -webkit-transform: scaleX(-1);
+            transform: scaleX(-1);
+            border-radius: 16px;
+        }
+
+        video {
+            opacity: 0;
+        }
+
+        .touch-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 24px 48px;
+            border-radius: 12px;
+            font-size: 1.5em;
+            font-weight: 500;
+            text-align: center;
+            z-index: 10;
+            border: 1px solid #333;
+            transition: all 0.2s ease;
+            min-width: 200px;
+        }
+
+        .touch-indicator.touching {
+            background: #2563eb;
+            color: #fff;
+            transform: translate(-50%, -50%) scale(1.05);
+            border-color: #3b82f6;
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: #1a1a1a;
+            border-top: 1px solid #333;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            z-index: 3;
+        }
+
+        .camera-container {
+            display: flex;
+            align-items: center;
+            margin-right: 16px;
+            color: #fff;
+            background: #262626;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #404040;
+        }
+
+        .camera-container select {
+            background: #262626;
+            color: #fff;
+            border: 1px solid #404040;
+            border-radius: 6px;
+            padding: 6px 10px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        .camera-container select:hover {
+            border-color: #525252;
+        }
+
+        .camera-container select option {
+            background-color: #262626;
+            color: #fff;
+        }
+
+        .camera-label {
+            margin-right: 8px;
+            white-space: nowrap;
+            font-weight: 500;
+            color: #d1d5db;
+            font-size: 14px;
+        }
+
+        button {
+            color: #fff;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all 0.2s ease;
+            background: #262626;
+            border: 1px solid #404040;
+        }
+
+        button:hover {
+            background: #374151;
+            border-color: #525252;
+        }
+
+        button.active {
+            background: #2563eb;
+            border-color: #3b82f6;
+        }
+
+        #info-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            max-width: 300px;
+            font-family: 'Inter', sans-serif;
+            color: #d1d5db;
+            border: 1px solid #333;
+        }
+
+        #info-box h2 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 1.2em;
+            margin-bottom: 12px;
+            font-weight: 600;
+        }
+
+        #info-box p {
+            margin-bottom: 8px;
+            line-height: 1.5;
+            font-size: 0.9em;
+        }
+
+        #info-box button {
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+
+        #info-box button:hover {
+            background: #1d4ed8;
+        }
+
+        .calibration-status {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 16px;
+            border-radius: 12px;
+            font-size: 13px;
+            z-index: 10;
+            max-width: 240px;
+            border: 1px solid #333;
+        }
+
+        .calibration-status h3 {
+            margin-top: 0;
+            margin-bottom: 12px;
+            color: #ffffff;
+            font-size: 1.1em;
+            font-weight: 600;
+        }
+
+        .calibration-status p {
+            margin: 6px 0;
+            font-size: 0.9em;
+        }
+
+        .calibration-status .detected {
+            color: #10b981;
+            font-weight: 500;
+        }
+
+        .calibration-status .not-detected {
+            color: #ef4444;
+            font-weight: 500;
+        }
+
+        .performance-info {
+            position: absolute;
+            bottom: 100px;
+            right: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            padding: 12px 16px;
+            border-radius: 8px;
+            font-size: 12px;
+            z-index: 10;
+            border: 1px solid #333;
+        }
+
+        .performance-info div {
+            margin: 4px 0;
+            font-family: 'Inter', sans-serif;
+            font-size: 0.85em;
+        }
+
+        .calibration-instructions {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: #1a1a1a;
+            color: #fff;
+            padding: 24px;
+            border-radius: 12px;
+            text-align: center;
+            z-index: 15;
+            display: none;
+            max-width: 400px;
+            border: 1px solid #333;
+        }
+
+        .calibration-instructions h3 {
+            margin-top: 0;
+            color: #ffffff;
+            font-size: 1.3em;
+            margin-bottom: 16px;
+            font-weight: 600;
+        }
+
+        .calibration-instructions p {
+            margin: 12px 0;
+            font-size: 0.95em;
+            line-height: 1.5;
+        }
+
+        .calibration-instructions button {
+            margin-top: 16px;
+            background: #2563eb;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+
+        .calibration-instructions button:hover {
+            background: #1d4ed8;
+        }
+
+        select {
+            background: #262626;
+            color: #fff;
+            border: 1px solid #404040;
+            border-radius: 8px;
+            padding: 8px 12px;
+            font-size: 14px;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            outline: none;
+            transition: border-color 0.2s ease;
+        }
+
+        select:hover {
+            border-color: #525252;
+        }
+
+        select option {
+            background-color: #262626;
+            color: #fff;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+            
+            .wrapper {
+                width: 95vw;
+                height: 60vh;
+            }
+            
+            .touch-indicator {
+                font-size: 1.2em;
+                padding: 20px 40px;
+                min-width: 180px;
+            }
+            
+            .controls {
+                padding: 16px;
+                gap: 8px;
+            }
+            
+            .camera-container {
+                margin-right: 8px;
+                padding: 6px 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <h1>Dyno Client</h1>
+    <div id="info-box">
+        <h2>Welcome to Dyno</h2>
+        <p>Touch detection for your workspace.</p>
+        <p>Point your finger down to touch the surface.</p>
+        <p>The indicator will show when you're touching.</p>
+
+        <button id="close-info">Got it</button>
+    </div>
+    
+    <div class="calibration-status" id="calibrationStatus">
+        <h3>Status</h3>
+        <p>Rectangle Detection: <span id="rectangleStatus" class="not-detected">Not Detected</span></p>
+        <p>Calibration Mode: <span id="calibrationMode" class="not-detected">Off</span></p>
+        <p>LED Matrix: <span id="ledMatrixStatus" class="not-detected">Off</span></p>
+    </div>
+    
+    <div class="performance-info" id="performanceInfo">
+        <div>FPS: <span id="fpsCounter">0</span></div>
+        <div>Detection: <span id="detectionTime">0ms</span></div>
+    </div>
+    
+    <div class="calibration-instructions" id="calibrationInstructions">
+        <h3>Calibration Setup</h3>
+        <p>1. Place a black rectangle on your desk</p>
+        <p>2. Make sure it's visible in the camera view</p>
+        <p>3. The system will detect and outline the rectangle</p>
+        <p>4. Once detected, it will be used for calibration</p>
+        <button id="closeInstructions">Got it</button>
+    </div>
+    
+    <div class="wrapper">
+        <div class="video-container">
+            <video id="videoElement"></video>
+            <canvas id="canvasElement"></canvas>
+        </div>
+        <div class="touch-indicator" id="touchIndicator">
+            <div id="touchStatus">NOT TOUCHING</div>
+        </div>
+    </div>
+    <div class="controls">
+        <div class="camera-container">
+            <label for="cameraSelect" class="camera-label">Camera:</label>
+            <select id="cameraSelect">
+                <option value="">Loading cameras...</option>
+            </select>
+        </div>
+        <button id="calibrationToggle">Enable Calibration</button>
+        <button id="resetCalibration">Reset Calibration</button>
+        <button id="ledMatrixToggle">Enable LED Matrix</button>
+        <button id="shareScreen">Share Screen</button>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+
+    <script>
+        const infoBox = document.getElementById('info-box');
+        const closeInfoButton = document.getElementById('close-info');
+        const touchIndicator = document.getElementById('touchIndicator');
+        const touchStatus = document.getElementById('touchStatus');
+        const calibrationToggle = document.getElementById('calibrationToggle');
+        const resetCalibrationButton = document.getElementById('resetCalibration');
+        const rectangleStatus = document.getElementById('rectangleStatus');
+        const calibrationMode = document.getElementById('calibrationMode');
+        const calibrationInstructions = document.getElementById('calibrationInstructions');
+        const closeInstructionsButton = document.getElementById('closeInstructions');
+        const ledMatrixToggle = document.getElementById('ledMatrixToggle');
+        const shareScreenButton = document.getElementById('shareScreen');
+
+        closeInfoButton.addEventListener('click', () => {
+            infoBox.style.display = "none";
+        });
+
+        closeInstructionsButton.addEventListener('click', () => {
+            calibrationInstructions.style.display = "none";
+        });
+
+        // Screen sharing functionality
+        shareScreenButton.addEventListener('click', async () => {
+            try {
+                const stream = await navigator.mediaDevices.getDisplayMedia({
+                    video: {
+                        cursor: "always"
+                    },
+                    audio: false
+                });
+                
+                console.log('Screen sharing started:', stream);
+                shareScreenButton.textContent = 'Stop Sharing';
+                shareScreenButton.classList.add('active');
+                
+                // Handle stream stop
+                stream.getVideoTracks()[0].addEventListener('ended', () => {
+                    shareScreenButton.textContent = 'Share Screen';
+                    shareScreenButton.classList.remove('active');
+                });
+                
+            } catch (error) {
+                console.error('Error sharing screen:', error);
+                alert('Failed to share screen: ' + error.message);
+            }
+        });
+
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasElement');
+        const canvasCtx = canvasElement.getContext('2d');
+
+        let isTouching = false;
+        let lastHandDetectionTime = 0;
+        let consecutiveTouchFrames = 0;
+        const requiredTouchFrames = 2; // Reduced from 3 to 2 for more responsive detection
+
+        // Calibration variables
+        let calibrationEnabled = false;
+        let calibrationPoints = [];
+        let calibrationData = {
+            rectangleCorners: null,
+            transformationMatrix: null
+        };
+
+        // LED Matrix variables
+        const LED_MATRIX_WIDTH = 64;
+        const LED_MATRIX_HEIGHT = 32;
+        let ledMatrixEnabled = false;
+        let lastLedTouch = null;
+        let ledMatrixDisplayActive = false; // Track if LED matrix display should be shown
+
+        // Performance monitoring
+        let frameCount = 0;
+        let lastFpsTime = 0;
+        let fps = 0;
+        let detectionStartTime = 0;
+        let detectionDuration = 0;
+
+        // Camera selection functionality
+        let camera = null;
+        let availableCameras = [];
+        let currentStream = null;
+        let cameraRetryCount = 0;
+        let maxRetries = 3;
+        let cameraHealthCheckInterval = null;
+        const cameraSelect = document.getElementById('cameraSelect');
+
+        // Enhanced camera management with retry and fallback
+        class RobustCameraManager {
+            constructor() {
+                this.camera = null;
+                this.stream = null;
+                this.deviceId = null;
+                this.isStarting = false;
+                this.retryCount = 0;
+                this.maxRetries = 3;
+                this.retryDelay = 1000;
+                this.healthCheckInterval = null;
+                this.lastFrameTime = 0;
+                this.frameTimeout = 5000; // 5 seconds without frames = camera issue
+            }
+
+            async startCamera(deviceId) {
+                if (this.isStarting) {
+                    console.log('Camera already starting, skipping...');
+                    return;
+                }
+
+                this.isStarting = true;
+                this.deviceId = deviceId;
+                this.retryCount = 0;
+
+                try {
+                    await this.attemptStartCamera(deviceId);
+                } catch (error) {
+                    console.error('Failed to start camera after all attempts:', error);
+                    this.handleCameraFailure(error);
+                } finally {
+                    this.isStarting = false;
+                }
+            }
+
+            async attemptStartCamera(deviceId) {
+                while (this.retryCount < this.maxRetries) {
+                    try {
+                        console.log(`Attempt ${this.retryCount + 1} to start camera:`, deviceId);
+                        
+                        // Stop any existing camera/stream
+                        await this.cleanup();
+                        
+                        // Try MediaPipe Camera first
+                        await this.startMediaPipeCamera(deviceId);
+                        
+                        // If successful, start health monitoring
+                        this.startHealthCheck();
+                        this.retryCount = 0; // Reset retry count on success
+                        return;
+                        
+                    } catch (error) {
+                        this.retryCount++;
+                        console.error(`Camera attempt ${this.retryCount} failed:`, error);
+                        
+                        if (this.retryCount >= this.maxRetries) {
+                            throw error;
+                        }
+                        
+                        // Wait before retry
+                        await this.delay(this.retryDelay * this.retryCount);
+                    }
+                }
+            }
+
+            async startMediaPipeCamera(deviceId) {
+                const constraints = {
+                    video: {
+                        deviceId: deviceId ? { exact: deviceId } : undefined,
+                        width: { ideal: 640, min: 320, max: 1280 },
+                        height: { ideal: 480, min: 240, max: 720 },
+                        frameRate: { ideal: 30, min: 15, max: 60 }
+                    }
+                };
+
+                // Test constraints first
+                const testStream = await navigator.mediaDevices.getUserMedia(constraints);
+                testStream.getTracks().forEach(track => track.stop());
+
+                // Check if MediaPipe Camera is available
+                if (typeof Camera === 'undefined') {
+                    console.warn('MediaPipe Camera not available, using fallback');
+                    await this.startFallbackCamera(deviceId);
+                    return;
+                }
+
+                try {
+                    // Start MediaPipe Camera
+                    this.camera = new Camera(videoElement, {
+                        onFrame: async () => {
+                            this.lastFrameTime = Date.now();
+                            try {
+                                await hands.send({ image: videoElement });
+                            } catch (error) {
+                                console.error('Error in camera frame processing:', error);
+                            }
+                        },
+                        width: 640,
+                        height: 480,
+                        mediaConstraints: constraints
+                    });
+
+                    await this.camera.start();
+                    
+                    // Check if camera actually started
+                    if (this.camera && typeof this.camera.getStream === 'function') {
+                        this.stream = this.camera.getStream();
+                    } else {
+                        // Fallback if getStream is not available
+                        this.stream = videoElement.srcObject;
+                    }
+                    
+                    console.log('MediaPipe Camera started successfully');
+                    this.updateCameraUI(deviceId, true);
+                    
+                } catch (mediaPipeError) {
+                    console.error('MediaPipe Camera failed, trying fallback:', mediaPipeError);
+                    await this.startFallbackCamera(deviceId);
+                }
+            }
+
+            async startFallbackCamera(deviceId) {
+                console.log('Starting fallback camera...');
+                
+                const constraints = {
+                    video: {
+                        deviceId: deviceId ? { exact: deviceId } : undefined,
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    }
+                };
+
+                this.stream = await navigator.mediaDevices.getUserMedia(constraints);
+                videoElement.srcObject = this.stream;
+                
+                // Start manual frame processing
+                this.startManualFrameProcessing();
+                
+                console.log('Fallback camera started successfully');
+                this.updateCameraUI(deviceId, true);
+            }
+
+            startManualFrameProcessing() {
+                const processFrame = async () => {
+                    if (this.stream && this.stream.active) {
+                        this.lastFrameTime = Date.now();
+                        try {
+                            await hands.send({ image: videoElement });
+                        } catch (error) {
+                            console.error('Error in manual frame processing:', error);
+                        }
+                        requestAnimationFrame(processFrame);
+                    }
+                };
+                processFrame();
+            }
+
+            startHealthCheck() {
+                if (this.healthCheckInterval) {
+                    clearInterval(this.healthCheckInterval);
+                }
+
+                this.healthCheckInterval = setInterval(() => {
+                    const now = Date.now();
+                    const timeSinceLastFrame = now - this.lastFrameTime;
+                    
+                    if (timeSinceLastFrame > this.frameTimeout) {
+                        console.warn('Camera appears to be frozen, attempting recovery...');
+                        this.handleCameraFailure(new Error('Camera frozen'));
+                    }
+                }, 2000);
+            }
+
+            async handleCameraFailure(error) {
+                console.error('Camera failure detected:', error);
+                
+                // Try fallback camera
+                if (this.deviceId && this.retryCount < this.maxRetries) {
+                    try {
+                        await this.startFallbackCamera(this.deviceId);
+                        return;
+                    } catch (fallbackError) {
+                        console.error('Fallback camera also failed:', fallbackError);
+                    }
+                }
+
+                // Try any available camera
+                if (availableCameras.length > 0) {
+                    const fallbackDevice = availableCameras.find(cam => cam.deviceId !== this.deviceId);
+                    if (fallbackDevice) {
+                        console.log('Trying different camera:', fallbackDevice.deviceId);
+                        cameraSelect.value = fallbackDevice.deviceId;
+                        await this.startCamera(fallbackDevice.deviceId);
+                        return;
+                    }
+                }
+
+                // Show error to user
+                this.updateCameraUI(this.deviceId, false);
+                this.showCameraError(error);
+            }
+
+            showCameraError(error) {
+                const errorMsg = `Camera failed to start: ${error.message}`;
+                console.error(errorMsg);
+                
+                // Create or update error notification
+                let errorDiv = document.getElementById('camera-error');
+                if (!errorDiv) {
+                    errorDiv = document.createElement('div');
+                    errorDiv.id = 'camera-error';
+                    errorDiv.style.cssText = `
+                        position: fixed;
+                        top: 50%;
+                        left: 50%;
+                        transform: translate(-50%, -50%);
+                        background: #dc2626;
+                        color: white;
+                        padding: 20px;
+                        border-radius: 8px;
+                        z-index: 1000;
+                        text-align: center;
+                        max-width: 400px;
+                    `;
+                    document.body.appendChild(errorDiv);
+                }
+                
+                errorDiv.innerHTML = `
+                    <h3>Camera Error</h3>
+                    <p>${error.message}</p>
+                    <button onclick="cameraManager.retryCurrentCamera()" style="
+                        background: #2563eb;
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        margin: 10px 5px;
+                    ">Retry</button>
+                    <button onclick="cameraManager.refreshAllCameras()" style="
+                        background: #059669;
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        margin: 10px 5px;
+                    ">Refresh Cameras</button>
+                    <button onclick="this.parentElement.remove()" style="
+                        background: #6b7280;
+                        color: white;
+                        border: none;
+                        padding: 8px 16px;
+                        border-radius: 4px;
+                        cursor: pointer;
+                        margin: 10px 5px;
+                    ">Close</button>
+                `;
+            }
+
+            async retryCurrentCamera() {
+                const errorDiv = document.getElementById('camera-error');
+                if (errorDiv) errorDiv.remove();
+                
+                if (this.deviceId) {
+                    await this.startCamera(this.deviceId);
+                }
+            }
+
+            async refreshAllCameras() {
+                const errorDiv = document.getElementById('camera-error');
+                if (errorDiv) errorDiv.remove();
+                
+                await enumerateCameras();
+            }
+
+            updateCameraUI(deviceId, isActive) {
+                // Clear all "Active" labels
+                cameraSelect.querySelectorAll('option').forEach(option => {
+                    option.textContent = option.textContent.replace(' (Active)', '');
+                });
+                
+                // Add "Active" label to current camera
+                if (isActive && deviceId) {
+                    const selectedOption = cameraSelect.querySelector(`option[value="${deviceId}"]`);
+                    if (selectedOption) {
+                        selectedOption.textContent = selectedOption.textContent + ' (Active)';
+                    }
+                }
+            }
+
+            async cleanup() {
+                // Stop health check
+                if (this.healthCheckInterval) {
+                    clearInterval(this.healthCheckInterval);
+                    this.healthCheckInterval = null;
+                }
+
+                // Stop MediaPipe Camera
+                if (this.camera) {
+                    try {
+                        this.camera.stop();
+                    } catch (e) {
+                        console.log('Camera stop error (normal):', e);
+                    }
+                    this.camera = null;
+                }
+
+                // Stop stream
+                if (this.stream) {
+                    this.stream.getTracks().forEach(track => {
+                        try {
+                            track.stop();
+                        } catch (e) {
+                            console.log('Track stop error (normal):', e);
+                        }
+                    });
+                    this.stream = null;
+                }
+
+                // Clear video element
+                if (videoElement.srcObject) {
+                    videoElement.srcObject = null;
+                }
+            }
+
+            delay(ms) {
+                return new Promise(resolve => setTimeout(resolve, ms));
+            }
+
+            getCurrentDeviceId() {
+                return this.deviceId;
+            }
+
+            isRunning() {
+                return this.camera !== null || (this.stream && this.stream.active);
+            }
+        }
+
+        // Create global camera manager instance
+        const cameraManager = new RobustCameraManager();
+
+        // Request camera permissions and enumerate cameras
+        async function enumerateCameras() {
+            try {
+                console.log('Enumerating cameras...');
+                
+                // First, request camera permissions by trying to get user media
+                const initialStream = await navigator.mediaDevices.getUserMedia({ 
+                    video: { 
+                        width: { ideal: 640 },
+                        height: { ideal: 480 }
+                    } 
+                });
+                
+                // Stop the initial stream
+                initialStream.getTracks().forEach(track => track.stop());
+                
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                console.log('Found video devices:', videoDevices);
+                
+                availableCameras = videoDevices;
+                cameraSelect.innerHTML = '';
+                
+                if (videoDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No cameras found';
+                    cameraSelect.appendChild(option);
+                    return;
+                }
+                
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    
+                    // Create a more descriptive label
+                    let label = device.label || `Camera ${index + 1}`;
+                    
+                    // Add device info if available
+                    if (device.label) {
+                        // Check if it's likely a USB camera
+                        if (device.label.toLowerCase().includes('usb') || 
+                            device.label.toLowerCase().includes('webcam') ||
+                            device.label.toLowerCase().includes('external')) {
+                            label = `📹 ${label}`;
+                        } else if (device.label.toLowerCase().includes('built') ||
+                                   device.label.toLowerCase().includes('internal')) {
+                            label = `💻 ${label}`;
+                        }
+                    }
+                    
+                    option.textContent = label;
+                    cameraSelect.appendChild(option);
+                });
+                
+                // Select the first camera by default
+                if (videoDevices.length > 0) {
+                    cameraSelect.value = videoDevices[0].deviceId;
+                    console.log('Starting default camera:', videoDevices[0].deviceId);
+                    await cameraManager.startCamera(videoDevices[0].deviceId);
+                }
+                
+            } catch (error) {
+                console.error('Error enumerating cameras:', error);
+                if (error.name === 'NotAllowedError') {
+                    cameraSelect.innerHTML = '<option value="">Camera permission denied</option>';
+                    alert('Camera permission denied. Please allow camera access and refresh.');
+                } else {
+                    cameraSelect.innerHTML = '<option value="">Error loading cameras</option>';
+                    alert(`Error loading cameras: ${error.message}`);
+                }
+            }
+        }
+
+        // Refresh camera list
+        async function refreshCameras() {
+            cameraSelect.innerHTML = '<option value="">Refreshing...</option>';
+            await enumerateCameras();
+        }
+
+        // Add refresh button
+        const refreshButton = document.createElement('button');
+        refreshButton.textContent = '🔄';
+        refreshButton.title = 'Refresh cameras';
+        refreshButton.style.marginLeft = '10px';
+        refreshButton.style.padding = '8px 12px';
+        refreshButton.addEventListener('click', refreshCameras);
+        document.querySelector('.camera-container').appendChild(refreshButton);
+
+        // Add debug button
+        const debugButton = document.createElement('button');
+        debugButton.textContent = '🐛';
+        debugButton.title = 'Debug camera info';
+        debugButton.style.marginLeft = '10px';
+        debugButton.style.padding = '8px 12px';
+        debugButton.addEventListener('click', () => {
+            console.log('=== Camera Debug Info ===');
+            console.log('Available cameras:', availableCameras);
+            console.log('Camera manager:', cameraManager);
+            console.log('Video element:', videoElement);
+            console.log('Selected device ID:', cameraSelect.value);
+            console.log('Camera running:', cameraManager.isRunning());
+            console.log('Current device ID:', cameraManager.getCurrentDeviceId());
+            
+            // Test each camera
+            availableCameras.forEach(async (device, index) => {
+                try {
+                    const testStream = await navigator.mediaDevices.getUserMedia({
+                        video: { deviceId: { exact: device.deviceId } }
+                    });
+                    console.log(`Camera ${index + 1} (${device.label}) - WORKING`);
+                    testStream.getTracks().forEach(track => track.stop());
+                } catch (error) {
+                    console.log(`Camera ${index + 1} (${device.label}) - FAILED:`, error.message);
+                }
+            });
+        });
+        document.querySelector('.camera-container').appendChild(debugButton);
+
+        // Handle camera selection change
+        cameraSelect.addEventListener('change', async (event) => {
+            const selectedDeviceId = event.target.value;
+            if (selectedDeviceId) {
+                console.log('Camera selection changed to:', selectedDeviceId);
+                await cameraManager.startCamera(selectedDeviceId);
+            }
+        });
+
+        // Initialize camera enumeration
+        enumerateCameras();
+
+        // Add automatic recovery and additional robustness features
+        window.addEventListener('beforeunload', () => {
+            if (cameraManager) {
+                cameraManager.cleanup();
+            }
+        });
+
+        // Add force restart button for emergency recovery
+        const forceRestartButton = document.createElement('button');
+        forceRestartButton.textContent = '🚀';
+        forceRestartButton.title = 'Force restart camera';
+        forceRestartButton.style.marginLeft = '10px';
+        forceRestartButton.style.padding = '8px 12px';
+        forceRestartButton.style.background = '#dc2626';
+        forceRestartButton.style.color = 'white';
+        forceRestartButton.style.border = 'none';
+        forceRestartButton.style.borderRadius = '4px';
+        forceRestartButton.style.cursor = 'pointer';
+        forceRestartButton.addEventListener('click', async () => {
+            console.log('Force restarting camera...');
+            forceRestartButton.disabled = true;
+            forceRestartButton.textContent = '⏳';
+            
+            try {
+                await cameraManager.cleanup();
+                await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1 second
+                await enumerateCameras();
+            } catch (error) {
+                console.error('Force restart failed:', error);
+            } finally {
+                forceRestartButton.disabled = false;
+                forceRestartButton.textContent = '🚀';
+            }
+        });
+        document.querySelector('.camera-container').appendChild(forceRestartButton);
+
+        // Add camera status indicator
+        const statusIndicator = document.createElement('div');
+        statusIndicator.id = 'camera-status';
+        statusIndicator.style.cssText = `
+            position: fixed;
+            top: 10px;
+            right: 10px;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            z-index: 1000;
+            background: #059669;
+            color: white;
+        `;
+        statusIndicator.textContent = 'Camera: Ready';
+        document.body.appendChild(statusIndicator);
+
+        // Update status indicator
+        function updateCameraStatus(status, color = '#059669') {
+            const indicator = document.getElementById('camera-status');
+            if (indicator) {
+                indicator.textContent = `Camera: ${status}`;
+                indicator.style.background = color;
+            }
+        }
+
+        // Monitor camera health and update status
+        setInterval(() => {
+            if (cameraManager.isRunning()) {
+                updateCameraStatus('Running', '#059669');
+            } else {
+                updateCameraStatus('Stopped', '#dc2626');
+            }
+        }, 1000);
+
+        // Add page visibility change handler for better camera management
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                console.log('Page hidden, pausing camera...');
+                updateCameraStatus('Paused', '#f59e0b');
+            } else {
+                console.log('Page visible, resuming camera...');
+                if (!cameraManager.isRunning() && cameraSelect.value) {
+                    cameraManager.startCamera(cameraSelect.value);
+                }
+            }
+        });
+
+        // Add error recovery for common camera issues
+        window.addEventListener('error', (event) => {
+            if (event.error && event.error.message && 
+                (event.error.message.includes('camera') || 
+                 event.error.message.includes('media') ||
+                 event.error.message.includes('stream'))) {
+                console.error('Camera-related error detected:', event.error);
+                updateCameraStatus('Error', '#dc2626');
+                
+                // Attempt recovery after a delay
+                setTimeout(() => {
+                    if (!cameraManager.isRunning() && cameraSelect.value) {
+                        console.log('Attempting automatic camera recovery...');
+                        cameraManager.startCamera(cameraSelect.value);
+                    }
+                }, 2000);
+            }
+        });
+
+        // Add unhandled promise rejection handler for camera issues
+        window.addEventListener('unhandledrejection', (event) => {
+            if (event.reason && event.reason.message && 
+                (event.reason.message.includes('camera') || 
+                 event.reason.message.includes('media') ||
+                 event.reason.message.includes('stream'))) {
+                console.error('Camera-related promise rejection:', event.reason);
+                updateCameraStatus('Error', '#dc2626');
+                
+                // Attempt recovery after a delay
+                setTimeout(() => {
+                    if (!cameraManager.isRunning() && cameraSelect.value) {
+                        console.log('Attempting automatic camera recovery from promise rejection...');
+                        cameraManager.startCamera(cameraSelect.value);
+                    }
+                }, 2000);
+            }
+        });
+
+        function updateTouchStatus(touching) {
+            if (touching !== isTouching) {
+                isTouching = touching;
+                if (touching) {
+                    touchStatus.textContent = 'TOUCHING!';
+                    touchIndicator.classList.add('touching');
+                } else {
+                    touchStatus.textContent = 'NOT TOUCHING';
+                    touchIndicator.classList.remove('touching');
+                }
+            }
+        }
+
+        // Rectangle detection functions
+        let frameSkipCounter = 0;
+        const FRAME_SKIP = 3; // Process every 3rd frame for performance
+        let lastDetectionTime = 0;
+        const DETECTION_INTERVAL = 100; // Minimum time between detections (ms)
+
+        function detectBlackRectangle(imageData) {
+            const now = Date.now();
+            if (now - lastDetectionTime < DETECTION_INTERVAL) {
+                return null;
+            }
+            
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+            
+            // Skip frames for performance
+            frameSkipCounter++;
+            if (frameSkipCounter % FRAME_SKIP !== 0) {
+                return null;
+            }
+            
+            // Adaptive thresholding for better detection
+            const threshold = calculateAdaptiveThreshold(data);
+            const binary = new Uint8Array(width * height);
+            
+            // Combined grayscale conversion and thresholding
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                const gray = (r + g + b) / 3;
+                const idx = i / 4;
+                binary[idx] = gray < threshold ? 255 : 0;
+            }
+            
+            // Find contours using optimized flood fill
+            const contours = findContoursOptimized(binary, width, height);
+            
+            // Find the largest rectangular contour
+            let bestRectangle = null;
+            let maxArea = 0;
+            
+            for (const contour of contours) {
+                if (contour.length >= 4) {
+                    const hull = convexHullOptimized(contour);
+                    if (hull.length === 4 && isValidRectangle(hull)) {
+                        const area = calculateArea(hull);
+                        if (area > maxArea && area > 2000) { // Increased minimum area threshold
+                            maxArea = area;
+                            bestRectangle = hull;
+                        }
+                    }
+                }
+            }
+            
+            lastDetectionTime = now;
+            return bestRectangle;
+        }
+
+        function calculateAdaptiveThreshold(data) {
+            // Calculate average brightness for adaptive thresholding
+            let sum = 0;
+            let count = 0;
+            
+            for (let i = 0; i < data.length; i += 4) {
+                const r = data[i];
+                const g = data[i + 1];
+                const b = data[i + 2];
+                sum += (r + g + b) / 3;
+                count++;
+            }
+            
+            const average = sum / count;
+            return Math.max(60, Math.min(120, average * 0.4)); // Adaptive threshold
+        }
+
+        function isValidRectangle(points) {
+            if (points.length !== 4) return false;
+            
+            // Check if points form a reasonable rectangle
+            const angles = [];
+            for (let i = 0; i < 4; i++) {
+                const p1 = points[i];
+                const p2 = points[(i + 1) % 4];
+                const p3 = points[(i + 2) % 4];
+                
+                const angle = Math.atan2(p3.y - p2.y, p3.x - p2.x) - 
+                             Math.atan2(p1.y - p2.y, p1.x - p2.x);
+                angles.push(Math.abs(angle * 180 / Math.PI));
+            }
+            
+            // Check if angles are roughly 90 degrees
+            const validAngles = angles.filter(angle => 
+                Math.abs(angle - 90) < 30 || Math.abs(angle - 270) < 30
+            );
+            
+            return validAngles.length >= 3; // At least 3 angles should be roughly 90 degrees
+        }
+
+        function findContoursOptimized(binary, width, height) {
+            const visited = new Uint8Array(width * height);
+            const contours = [];
+            
+            // Use a more efficient scanning approach
+            for (let y = 0; y < height; y += 2) { // Skip every other row for performance
+                for (let x = 0; x < width; x += 2) { // Skip every other column for performance
+                    const idx = y * width + x;
+                    if (binary[idx] === 255 && visited[idx] === 0) {
+                        const contour = [];
+                        floodFillOptimized(binary, width, height, x, y, visited, contour);
+                        if (contour.length > 20) { // Increased minimum contour size
+                            contours.push(contour);
+                        }
+                    }
+                }
+            }
+            
+            return contours;
+        }
+
+        function floodFillOptimized(binary, width, height, startX, startY, visited, contour) {
+            const stack = [{x: startX, y: startY}];
+            const maxIterations = 1000; // Prevent infinite loops
+            let iterations = 0;
+            
+            while (stack.length > 0 && iterations < maxIterations) {
+                const {x, y} = stack.pop();
+                const idx = y * width + x;
+                
+                if (x < 0 || x >= width || y < 0 || y >= height || 
+                    binary[idx] !== 255 || visited[idx] === 1) {
+                    iterations++;
+                    continue;
+                }
+                
+                visited[idx] = 1;
+                contour.push({x, y});
+                
+                // Add neighbors (reduced for performance)
+                stack.push({x: x + 1, y: y});
+                stack.push({x: x - 1, y: y});
+                stack.push({x: x, y: y + 1});
+                stack.push({x: x, y: y - 1});
+                
+                iterations++;
+            }
+        }
+
+        function convexHullOptimized(points) {
+            if (points.length < 3) return points;
+            
+            // Reduce points for performance
+            const reducedPoints = [];
+            const step = Math.max(1, Math.floor(points.length / 50)); // Limit to ~50 points
+            for (let i = 0; i < points.length; i += step) {
+                reducedPoints.push(points[i]);
+            }
+            
+            // Graham scan algorithm (optimized)
+            const sorted = reducedPoints.sort((a, b) => {
+                if (a.y !== b.y) return a.y - b.y;
+                return a.x - b.x;
+            });
+            
+            const cross = (o, a, b) => {
+                return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x);
+            };
+            
+            const lower = [];
+            for (const point of sorted) {
+                while (lower.length >= 2 && cross(lower[lower.length - 2], lower[lower.length - 1], point) <= 0) {
+                    lower.pop();
+                }
+                lower.push(point);
+            }
+            
+            const upper = [];
+            for (let i = sorted.length - 1; i >= 0; i--) {
+                const point = sorted[i];
+                while (upper.length >= 2 && cross(upper[upper.length - 2], upper[upper.length - 1], point) <= 0) {
+                    upper.pop();
+                }
+                upper.push(point);
+            }
+            
+            upper.pop();
+            lower.pop();
+            return lower.concat(upper);
+        }
+
+        function calculateArea(points) {
+            if (points.length < 3) return 0;
+            
+            let area = 0;
+            for (let i = 0; i < points.length; i++) {
+                const j = (i + 1) % points.length;
+                area += points[i].x * points[j].y;
+                area -= points[j].x * points[i].y;
+            }
+            return Math.abs(area) / 2;
+        }
+
+        function drawRectangle(canvasCtx, rectangle, color = '#00FF00', lineWidth = 3) {
+            if (!rectangle || rectangle.length !== 4) return;
+            
+            canvasCtx.strokeStyle = color;
+            canvasCtx.lineWidth = lineWidth;
+            canvasCtx.beginPath();
+            
+            for (let i = 0; i < rectangle.length; i++) {
+                const point = rectangle[i];
+                if (i === 0) {
+                    canvasCtx.moveTo(point.x, point.y);
+                } else {
+                    canvasCtx.lineTo(point.x, point.y);
+                }
+            }
+            canvasCtx.closePath();
+            canvasCtx.stroke();
+            
+            // Draw corner points
+            canvasCtx.fillStyle = color;
+            for (const point of rectangle) {
+                canvasCtx.beginPath();
+                canvasCtx.arc(point.x, point.y, 5, 0, 2 * Math.PI);
+                canvasCtx.fill();
+            }
+        }
+
+        // Remove automatic rectangle detection
+        // Add manual point selection for calibration
+        canvasElement.addEventListener('click', function (e) {
+            if (!calibrationEnabled) return;
+            if (calibrationPoints.length >= 4) return;
+            const rect = canvasElement.getBoundingClientRect();
+            let x = (e.clientX - rect.left) * (canvasElement.width / rect.width);
+            x = canvasElement.width - x; // Mirror the x coordinate
+            const y = (e.clientY - rect.top) * (canvasElement.height / rect.height);
+            calibrationPoints.push({ x, y });
+            if (calibrationPoints.length === 4) {
+                calibrationData.rectangleCorners = calibrationPoints.slice();
+            }
+            updateCalibrationStatus();
+        });
+
+        function drawManualRectangle(ctx, points, color = '#FF0000', lineWidth = 3) {
+            if (points.length === 0) return;
+            ctx.save();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = lineWidth;
+            ctx.beginPath();
+            ctx.moveTo(points[0].x, points[0].y);
+            for (let i = 1; i < points.length; i++) {
+                ctx.lineTo(points[i].x, points[i].y);
+            }
+            if (points.length === 4) ctx.closePath();
+            ctx.stroke();
+            // Draw corner points
+            ctx.fillStyle = color;
+            for (const pt of points) {
+                ctx.beginPath();
+                ctx.arc(pt.x, pt.y, 6, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+            ctx.restore();
+        }
+
+        // Update calibration status for manual mode
+        function updateCalibrationStatus() {
+            if (calibrationPoints.length === 4) {
+                rectangleStatus.textContent = 'Detected';
+                rectangleStatus.className = 'detected';
+            } else {
+                rectangleStatus.textContent = 'Not Detected';
+                rectangleStatus.className = 'not-detected';
+            }
+            if (calibrationEnabled) {
+                calibrationMode.textContent = 'On';
+                calibrationMode.className = 'detected';
+            } else {
+                calibrationMode.textContent = 'Off';
+                calibrationMode.className = 'not-detected';
+            }
+            
+            // Update LED matrix status
+            const ledMatrixStatus = document.getElementById('ledMatrixStatus');
+            if (ledMatrixStatus) {
+                if (ledMatrixEnabled) {
+                    ledMatrixStatus.textContent = 'On';
+                    ledMatrixStatus.className = 'detected';
+                } else {
+                    ledMatrixStatus.textContent = 'Off';
+                    ledMatrixStatus.className = 'not-detected';
+                }
+            }
+        }
+
+        // Event listeners for calibration controls
+        calibrationToggle.addEventListener('click', () => {
+            if (!calibrationEnabled) {
+                calibrationInstructions.style.display = 'block';
+            }
+            calibrationEnabled = !calibrationEnabled;
+            calibrationToggle.textContent = calibrationEnabled ? 'Disable Calibration' : 'Enable Calibration';
+            calibrationToggle.classList.toggle('active', calibrationEnabled);
+            if (!calibrationEnabled) {
+                calibrationPoints = [];
+                calibrationData.rectangleCorners = null;
+                calibrationData.transformationMatrix = null;
+            }
+            updateCalibrationStatus();
+        });
+
+        resetCalibrationButton.addEventListener('click', () => {
+            calibrationPoints = [];
+            calibrationData.rectangleCorners = null;
+            calibrationData.transformationMatrix = null;
+            updateCalibrationStatus();
+        });
+
+        // LED Matrix Controls
+        ledMatrixToggle.addEventListener('click', () => {
+            ledMatrixEnabled = !ledMatrixEnabled;
+            ledMatrixToggle.textContent = ledMatrixEnabled ? 'Disable LED Matrix' : 'Enable LED Matrix';
+            ledMatrixToggle.classList.toggle('active', ledMatrixEnabled);
+            
+            if (!ledMatrixEnabled) {
+                lastLedTouch = null;
+            }
+            
+            console.log('LED Matrix:', ledMatrixEnabled ? 'Enabled' : 'Disabled');
+        });
+
+        // Utility: Check if point is inside polygon (ray casting algorithm)
+        function isPointInPolygon(point, polygon) {
+            let x = point.x, y = point.y;
+            let inside = false;
+            for (let i = 0, j = polygon.length - 1; i < polygon.length; j = i++) {
+                let xi = polygon[i].x, yi = polygon[i].y;
+                let xj = polygon[j].x, yj = polygon[j].y;
+                let intersect = ((yi > y) !== (yj > y)) &&
+                    (x < (xj - xi) * (y - yi) / (yj - yi + 0.00001) + xi);
+                if (intersect) inside = !inside;
+            }
+            return inside;
+        }
+
+        // LED Matrix Coordinate Mapping Functions
+        function mapToLEDMatrix(touchPoint, calibrationPoints) {
+            if (!calibrationPoints || calibrationPoints.length !== 4) {
+                return null;
+            }
+
+            // Transform camera coordinates to normalized coordinates within the calibration rectangle
+            const normalizedPoint = transformToNormalized(touchPoint, calibrationPoints);
+            
+            if (!normalizedPoint) {
+                return null;
+            }
+
+            // Map normalized coordinates (0-1) to LED matrix coordinates
+            const ledX = Math.floor(normalizedPoint.x * LED_MATRIX_WIDTH);
+            const ledY = Math.floor(normalizedPoint.y * LED_MATRIX_HEIGHT);
+            
+            // Clamp to valid LED matrix bounds
+            const clampedX = Math.max(0, Math.min(LED_MATRIX_WIDTH - 1, ledX));
+            const clampedY = Math.max(0, Math.min(LED_MATRIX_HEIGHT - 1, ledY));
+            
+            return { x: clampedX, y: clampedY };
+        }
+
+        function transformToNormalized(point, calibrationPoints) {
+            // Use perspective transformation to map camera coordinates to normalized coordinates
+            // This handles cases where the LED matrix is not perfectly aligned with the camera
+            
+            // For now, use a simple linear mapping based on the bounding box
+            const bounds = getBoundingBox(calibrationPoints);
+            
+            if (!bounds) return null;
+            
+            // Calculate relative position within the calibration rectangle
+            const relativeX = (point.x - bounds.minX) / (bounds.maxX - bounds.minX);
+            const relativeY = (point.y - bounds.minY) / (bounds.maxY - bounds.minY);
+            
+            // Clamp to 0-1 range
+            const normalizedX = Math.max(0, Math.min(1, relativeX));
+            // Flip the Y-axis because camera perspective is upside down from user's view
+            const normalizedY = Math.max(0, Math.min(1, 1 - relativeY));
+            
+            return { x: normalizedX, y: normalizedY };
+        }
+
+        function getBoundingBox(points) {
+            if (!points || points.length === 0) return null;
+            
+            let minX = points[0].x, maxX = points[0].x;
+            let minY = points[0].y, maxY = points[0].y;
+            
+            for (const point of points) {
+                minX = Math.min(minX, point.x);
+                maxX = Math.max(maxX, point.x);
+                minY = Math.min(minY, point.y);
+                maxY = Math.max(maxY, point.y);
+            }
+            
+            return { minX, maxX, minY, maxY };
+        }
+
+        // LED Matrix Communication
+        function sendLEDMatrixUpdate(ledMatrix, touchPoint) {
+            if (!ledMatrixEnabled) return;
+            
+            const data = {
+                matrix: ledMatrix,
+                touch: touchPoint,
+                timestamp: Date.now()
+            };
+            
+            // Send via WebSocket (when implemented)
+            if (window.socket && window.socket.connected) {
+                window.socket.emit('led_matrix_update', data);
+            }
+            
+            // For now, log to console
+            console.log('LED Matrix Update:', data);
+        }
+
+        function createLEDMatrix() {
+            const matrix = [];
+            for (let y = 0; y < LED_MATRIX_HEIGHT; y++) {
+                matrix[y] = [];
+                for (let x = 0; x < LED_MATRIX_WIDTH; x++) {
+                    matrix[y][x] = 0;
+                }
+            }
+            return matrix;
+        }
+
+        function updateLEDMatrixDisplay(touchPoint) {
+            if (!ledMatrixEnabled || !touchPoint) return;
+            
+            const ledMatrix = createLEDMatrix();
+            
+            // Simple LED matrix visualization - just highlight the touched LED
+            const ledX = Math.floor(touchPoint.x);
+            const ledY = Math.floor(touchPoint.y);
+            
+            if (ledX >= 0 && ledX < LED_MATRIX_WIDTH && ledY >= 0 && ledY < LED_MATRIX_HEIGHT) {
+                ledMatrix[ledY][ledX] = 255; // Bright white for touched LED
+            }
+            
+            sendLEDMatrixUpdate(ledMatrix, touchPoint);
+        }
+
+        function drawLEDMatrixDebug(canvasCtx, ledTouchPoint, cameraTouchPoint) {
+            // Draw LED matrix coordinates for debugging
+            canvasCtx.save();
+            canvasCtx.fillStyle = '#FFD700';
+            canvasCtx.font = 'bold 18px Arial';
+            
+            // Account for camera mirroring - draw text on the right side instead of left
+            const textX = canvasElement.width - 200; // Right side of screen
+            const textY = 30;
+            
+            // Draw background for better readability
+            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            canvasCtx.fillRect(textX - 10, textY - 25, 190, 60);
+            
+            // Draw text
+            canvasCtx.fillStyle = '#FFD700';
+            canvasCtx.fillText(`LED Matrix: (${ledTouchPoint.x}, ${ledTouchPoint.y})`, textX, textY);
+            canvasCtx.fillText(`Camera: (${Math.round(cameraTouchPoint.x)}, ${Math.round(cameraTouchPoint.y)})`, textX, textY + 20);
+            
+            // Draw LED matrix grid visualization
+            drawLEDMatrixGrid(canvasCtx, ledTouchPoint, cameraTouchPoint);
+            
+            // Draw a small circle at the LED touch point
+            canvasCtx.strokeStyle = '#FFD700';
+            canvasCtx.lineWidth = 3;
+            canvasCtx.beginPath();
+            canvasCtx.arc(cameraTouchPoint.x, cameraTouchPoint.y, 15, 0, 2 * Math.PI);
+            canvasCtx.stroke();
+            
+            // Draw crosshair
+            canvasCtx.strokeStyle = '#FF0000';
+            canvasCtx.lineWidth = 2;
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(cameraTouchPoint.x - 20, cameraTouchPoint.y);
+            canvasCtx.lineTo(cameraTouchPoint.x + 20, cameraTouchPoint.y);
+            canvasCtx.moveTo(cameraTouchPoint.x, cameraTouchPoint.y - 20);
+            canvasCtx.lineTo(cameraTouchPoint.x, cameraTouchPoint.y + 20);
+            canvasCtx.stroke();
+            
+            canvasCtx.restore();
+        }
+
+        function drawLEDMatrixGrid(canvasCtx, ledTouchPoint, cameraTouchPoint) {
+            // Draw a mini LED matrix grid to show which LED is being touched
+            // Matrix is 64x32 (width longer than height)
+            const gridWidth = 200; // Wider to accommodate 64 LEDs
+            const gridHeight = 100; // Shorter for 32 LEDs
+            const gridX = canvasElement.width - gridWidth - 20; // Right side
+            const gridY = 100;
+            const cellWidth = gridWidth / LED_MATRIX_WIDTH; // 64 LEDs across
+            const cellHeight = gridHeight / LED_MATRIX_HEIGHT; // 32 LEDs down
+            
+            canvasCtx.save();
+            
+            // Draw grid background
+            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            canvasCtx.fillRect(gridX - 5, gridY - 5, gridWidth + 10, gridHeight + 10);
+            
+            // Draw grid cells
+            for (let y = 0; y < LED_MATRIX_HEIGHT; y++) {
+                for (let x = 0; x < LED_MATRIX_WIDTH; x++) {
+                    const cellX = gridX + (x * cellWidth);
+                    const cellY = gridY + (y * cellHeight);
+                    
+                    // Highlight the touched LED with a bigger, more visible red dot
+                    if (x === ledTouchPoint.x && y === ledTouchPoint.y) {
+                        // Draw a larger red circle for the touched LED
+                        canvasCtx.fillStyle = '#FF0000';
+                        canvasCtx.beginPath();
+                        canvasCtx.arc(cellX + cellWidth/2, cellY + cellHeight/2, Math.min(cellWidth, cellHeight)/2 + 1, 0, 2 * Math.PI);
+                        canvasCtx.fill();
+                        
+                        // Add a white border around the red dot for better visibility
+                        canvasCtx.strokeStyle = '#FFFFFF';
+                        canvasCtx.lineWidth = 2;
+                        canvasCtx.stroke();
+                    } else {
+                        canvasCtx.fillStyle = '#333333'; // Dark gray for other LEDs
+                        canvasCtx.fillRect(cellX, cellY, cellWidth - 1, cellHeight - 1);
+                    }
+                }
+            }
+            
+            // Draw grid lines
+            canvasCtx.strokeStyle = '#666666';
+            canvasCtx.lineWidth = 1;
+            
+            // Vertical lines (64 columns)
+            for (let x = 0; x <= LED_MATRIX_WIDTH; x++) {
+                const lineX = gridX + (x * cellWidth);
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(lineX, gridY);
+                canvasCtx.lineTo(lineX, gridY + gridHeight);
+                canvasCtx.stroke();
+            }
+            
+            // Horizontal lines (32 rows)
+            for (let y = 0; y <= LED_MATRIX_HEIGHT; y++) {
+                const lineY = gridY + (y * cellHeight);
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(gridX, lineY);
+                canvasCtx.lineTo(gridX + gridWidth, lineY);
+                canvasCtx.stroke();
+            }
+            
+            // Draw coordinate labels with alignment info
+            canvasCtx.fillStyle = '#FFFFFF';
+            canvasCtx.font = '12px Arial';
+            canvasCtx.fillText(`LED (${ledTouchPoint.x}, ${ledTouchPoint.y})`, gridX, gridY + gridHeight + 20);
+            canvasCtx.fillText(`Y-axis flipped for user perspective`, gridX, gridY + gridHeight + 35);
+            
+            canvasCtx.restore();
+        }
+
+        function drawLEDMatrixDisplay(canvasCtx) {
+            // Draw the LED matrix display persistently when enabled
+            if (!ledMatrixEnabled) return;
+            
+            canvasCtx.save();
+            canvasCtx.fillStyle = '#FFD700';
+            canvasCtx.font = 'bold 18px Arial';
+            
+            // Account for camera mirroring - draw text on the right side instead of left
+            const textX = canvasElement.width - 200; // Right side of screen
+            const textY = 30;
+            
+            // Draw background for better readability
+            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.7)';
+            canvasCtx.fillRect(textX - 10, textY - 25, 190, 60);
+            
+            // Draw text
+            canvasCtx.fillStyle = '#FFD700';
+            canvasCtx.fillText(`LED Matrix: Enabled`, textX, textY);
+            canvasCtx.fillText(`Matrix: 64x32`, textX, textY + 20);
+            
+            // Draw LED matrix grid visualization (without touch point)
+            drawLEDMatrixGridPersistent(canvasCtx);
+            
+            canvasCtx.restore();
+        }
+
+        function drawTouchThresholds(canvasCtx) {
+            // Draw touch threshold zones for debugging
+            if (!calibrationEnabled || calibrationPoints.length !== 4) return;
+            
+            canvasCtx.save();
+            
+            // Get the bounds of the calibration rectangle
+            const bounds = getBoundingBox(calibrationPoints);
+            if (!bounds) return;
+            
+            // Draw threshold zones (note: Y-axis is flipped for user perspective)
+            const zoneHeight = (bounds.maxY - bounds.minY) / 3;
+            
+            // Top zone (0.25 threshold) - maps to LED matrix bottom (Y=31)
+            canvasCtx.fillStyle = 'rgba(255, 0, 0, 0.1)';
+            canvasCtx.fillRect(bounds.minX, bounds.minY, bounds.maxX - bounds.minX, zoneHeight);
+            
+            // Middle zone (0.35 threshold) - maps to LED matrix middle
+            canvasCtx.fillStyle = 'rgba(0, 255, 0, 0.1)';
+            canvasCtx.fillRect(bounds.minX, bounds.minY + zoneHeight, bounds.maxX - bounds.minX, zoneHeight);
+            
+            // Bottom zone (0.45 threshold) - maps to LED matrix top (Y=0)
+            canvasCtx.fillStyle = 'rgba(0, 0, 255, 0.1)';
+            canvasCtx.fillRect(bounds.minX, bounds.minY + zoneHeight * 2, bounds.maxX - bounds.minX, zoneHeight);
+            
+            // Draw threshold labels with LED matrix mapping
+            canvasCtx.fillStyle = '#FFFFFF';
+            canvasCtx.font = '12px Arial';
+            canvasCtx.fillText('Touch: 0.25 → LED Y=31', bounds.minX + 5, bounds.minY + 15);
+            canvasCtx.fillText('Touch: 0.35 → LED Y=16', bounds.minX + 5, bounds.minY + zoneHeight + 15);
+            canvasCtx.fillText('Touch: 0.45 → LED Y=0', bounds.minX + 5, bounds.minY + zoneHeight * 2 + 15);
+            
+            canvasCtx.restore();
+        }
+
+        function drawCalibrationAlignment(canvasCtx) {
+            // Draw alignment guide showing how calibrated area maps to LED matrix
+            if (!calibrationEnabled || calibrationPoints.length !== 4) return;
+            
+            canvasCtx.save();
+            
+            // Get the bounds of the calibration rectangle
+            const bounds = getBoundingBox(calibrationPoints);
+            if (!bounds) return;
+            
+            // Draw alignment arrows and labels
+            canvasCtx.strokeStyle = '#00FFFF';
+            canvasCtx.lineWidth = 2;
+            canvasCtx.font = '14px Arial';
+            canvasCtx.fillStyle = '#00FFFF';
+            
+            // Top alignment
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(bounds.minX, bounds.minY - 10);
+            canvasCtx.lineTo(bounds.minX, bounds.minY - 30);
+            canvasCtx.stroke();
+            canvasCtx.fillText('↑ LED Matrix Top (Y=0)', bounds.minX + 5, bounds.minY - 35);
+            
+            // Bottom alignment
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(bounds.minX, bounds.maxY + 10);
+            canvasCtx.lineTo(bounds.minX, bounds.maxY + 30);
+            canvasCtx.stroke();
+            canvasCtx.fillText('↓ LED Matrix Bottom (Y=31)', bounds.minX + 5, bounds.maxY + 45);
+            
+            // Left alignment
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(bounds.minX - 10, bounds.minY);
+            canvasCtx.lineTo(bounds.minX - 30, bounds.minY);
+            canvasCtx.stroke();
+            canvasCtx.fillText('← LED Matrix Left (X=0)', bounds.minX - 35, bounds.minY + 5);
+            
+            // Right alignment
+            canvasCtx.beginPath();
+            canvasCtx.moveTo(bounds.maxX + 10, bounds.minY);
+            canvasCtx.lineTo(bounds.maxX + 30, bounds.minY);
+            canvasCtx.stroke();
+            canvasCtx.fillText('→ LED Matrix Right (X=63)', bounds.maxX + 5, bounds.minY + 5);
+            
+            // Draw corner indicators
+            canvasCtx.fillStyle = '#FF00FF';
+            canvasCtx.font = 'bold 16px Arial';
+            canvasCtx.fillText('(0,0)', bounds.minX + 5, bounds.minY + 15);
+            canvasCtx.fillText('(63,0)', bounds.maxX - 35, bounds.minY + 15);
+            canvasCtx.fillText('(0,31)', bounds.minX + 5, bounds.maxY - 5);
+            canvasCtx.fillText('(63,31)', bounds.maxX - 35, bounds.maxY - 5);
+            
+            canvasCtx.restore();
+        }
+
+        function drawLEDMatrixGridPersistent(canvasCtx) {
+            // Draw a mini LED matrix grid persistently when LED matrix is enabled
+            // Matrix is 64x32 (width longer than height)
+            const gridWidth = 200; // Wider to accommodate 64 LEDs
+            const gridHeight = 100; // Shorter for 32 LEDs
+            const gridX = canvasElement.width - gridWidth - 20; // Right side
+            const gridY = 100;
+            const cellWidth = gridWidth / LED_MATRIX_WIDTH; // 64 LEDs across
+            const cellHeight = gridHeight / LED_MATRIX_HEIGHT; // 32 LEDs down
+            
+            canvasCtx.save();
+            
+            // Draw grid background
+            canvasCtx.fillStyle = 'rgba(0, 0, 0, 0.8)';
+            canvasCtx.fillRect(gridX - 5, gridY - 5, gridWidth + 10, gridHeight + 10);
+            
+            // Draw grid cells (all gray when not touching)
+            for (let y = 0; y < LED_MATRIX_HEIGHT; y++) {
+                for (let x = 0; x < LED_MATRIX_WIDTH; x++) {
+                    const cellX = gridX + (x * cellWidth);
+                    const cellY = gridY + (y * cellHeight);
+                    
+                    canvasCtx.fillStyle = '#333333'; // Dark gray for all LEDs
+                    canvasCtx.fillRect(cellX, cellY, cellWidth - 1, cellHeight - 1);
+                }
+            }
+            
+            // Draw grid lines
+            canvasCtx.strokeStyle = '#666666';
+            canvasCtx.lineWidth = 1;
+            
+            // Vertical lines (64 columns)
+            for (let x = 0; x <= LED_MATRIX_WIDTH; x++) {
+                const lineX = gridX + (x * cellWidth);
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(lineX, gridY);
+                canvasCtx.lineTo(lineX, gridY + gridHeight);
+                canvasCtx.stroke();
+            }
+            
+            // Horizontal lines (32 rows)
+            for (let y = 0; y <= LED_MATRIX_HEIGHT; y++) {
+                const lineY = gridY + (y * cellHeight);
+                canvasCtx.beginPath();
+                canvasCtx.moveTo(gridX, lineY);
+                canvasCtx.lineTo(gridX + gridWidth, lineY);
+                canvasCtx.stroke();
+            }
+            
+            // Draw matrix info
+            canvasCtx.fillStyle = '#FFFFFF';
+            canvasCtx.font = '12px Arial';
+            canvasCtx.fillText(`64x32 LED Matrix`, gridX, gridY + gridHeight + 20);
+            
+            canvasCtx.restore();
+        }
+
+        function onResults(results) {
+            lastHandDetectionTime = Date.now();
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+            // Draw manual calibration rectangle if points exist
+            if (calibrationEnabled && calibrationPoints.length > 0) {
+                drawManualRectangle(canvasCtx, calibrationPoints, calibrationPoints.length === 4 ? '#00FF00' : '#FF0000', 3);
+                
+                // Draw touch threshold zones when calibration is complete
+                if (calibrationPoints.length === 4) {
+                    drawTouchThresholds(canvasCtx);
+                    drawCalibrationAlignment(canvasCtx); // Draw alignment guide
+                }
+            }
+
+            // Draw LED matrix display persistently when enabled
+            if (ledMatrixEnabled) {
+                drawLEDMatrixDisplay(canvasCtx);
+            }
+
+            let anyHandTouching = false;
+            let currentTouchPoint = null;
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    const classification = results.multiHandedness[i];
+                    const isLeftHand = classification.label === 'Left';
+
+                    // Check if any finger tip is touching the surface
+                    // Use different thresholds for different vertical zones to account for tilted camera
+                    const fingerTips = [
+                        landmarks[4],  // thumb tip
+                        landmarks[8],  // index finger tip
+                        landmarks[12], // middle finger tip
+                        landmarks[16], // ring finger tip
+                        landmarks[20]  // pinky tip
+                    ];
+                    
+                    // Check if any finger tip is touching the surface
+                    for (let tip of fingerTips) {
+                        const tipY = tip.y * canvasElement.height;
+                        const tipYPercent = tip.y; // 0-1 value
+                        const tipX = tip.x * canvasElement.width;
+                        
+                        // Much more sensitive touch detection across the entire screen
+                        let touchThreshold;
+                        if (tipYPercent < 0.4) {
+                            // Top 40%: very sensitive threshold
+                            touchThreshold = 0.25;
+                        } else if (tipYPercent < 0.7) {
+                            // Middle 30%: sensitive threshold
+                            touchThreshold = 0.35;
+                        } else {
+                            // Bottom 30%: slightly higher threshold but still sensitive
+                            touchThreshold = 0.45;
+                        }
+                        
+                        let isTouchingNow = tipY > canvasElement.height * touchThreshold;
+                        
+                        // If calibration is enabled and 4 points are set, require the tip to be inside the rectangle
+                        if (isTouchingNow && calibrationEnabled && calibrationPoints.length === 4) {
+                            // The calibrationPoints are in canvas coordinates
+                            const touchPoint = {x: tip.x * canvasElement.width, y: tip.y * canvasElement.height};
+                            if (!isPointInPolygon(touchPoint, calibrationPoints)) {
+                                isTouchingNow = false;
+                            } else {
+                                // Store the touch point for LED matrix mapping
+                                currentTouchPoint = touchPoint;
+                            }
+                        } else if (isTouchingNow && (!calibrationEnabled || calibrationPoints.length !== 4)) {
+                            // If no calibration, still allow touch detection
+                            currentTouchPoint = {x: tip.x * canvasElement.width, y: tip.y * canvasElement.height};
+                        }
+                        
+                        if (isTouchingNow) {
+                            anyHandTouching = true;
+                            break;
+                        }
+                    }
+
+                    // Draw hand landmarks (reduced detail for speed)
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
+                        { color: isLeftHand ? '#00FF00' : '#FF0000', lineWidth: 2 });
+                    drawLandmarks(canvasCtx, landmarks, { color: isLeftHand ? '#FF0000' : '#00FF00', lineWidth: 1 });
+                }
+            }
+            
+            // Debounce logic - only mark as touching if condition is met for several consecutive frames
+            if (anyHandTouching) {
+                consecutiveTouchFrames++;
+            } else {
+                consecutiveTouchFrames = 0;
+            }
+            
+            updateTouchStatus(consecutiveTouchFrames >= requiredTouchFrames);
+            
+            // LED Matrix Integration - only show touch indicators when actually touching
+            if (ledMatrixEnabled && calibrationEnabled && calibrationPoints.length === 4 && currentTouchPoint) {
+                const ledTouchPoint = mapToLEDMatrix(currentTouchPoint, calibrationPoints);
+                if (ledTouchPoint) {
+                    // Only update if touch point changed significantly
+                    if (!lastLedTouch || 
+                        Math.abs(ledTouchPoint.x - lastLedTouch.x) > 1 || 
+                        Math.abs(ledTouchPoint.y - lastLedTouch.y) > 1) {
+                        updateLEDMatrixDisplay(ledTouchPoint);
+                        lastLedTouch = ledTouchPoint;
+                        
+                        // Draw LED matrix coordinates on canvas for debugging (only when touching)
+                        drawLEDMatrixDebug(canvasCtx, ledTouchPoint, currentTouchPoint);
+                    }
+                    // --- Call handleMatrixTouch for Apple Music control ---
+                    handleMatrixTouch(ledTouchPoint);
+                }
+            } else if (!anyHandTouching) {
+                lastLedTouch = null;
+            }
+            
+            updateCalibrationStatus();
+            
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 0, // Faster, less accurate
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+        hands.onResults(onResults);
+
+        function resizeCanvas() {
+            // Only set to 640x480 for performance
+            canvasElement.width = 640;
+            canvasElement.height = 480;
+        }
+        videoElement.addEventListener('loadedmetadata', resizeCanvas);
+
+        // --- Apple Music Integration ---
+        let appleMusicRunning = false;
+        let lastAppleMusicStatus = null;
+        let picoSerialPort = null;
+        let picoWriter = null;
+
+        async function checkAppleMusicStatus() {
+            try {
+                const res = await fetch('/api/apple_music/status');
+                const data = await res.json();
+                appleMusicRunning = data.running;
+                if (lastAppleMusicStatus !== appleMusicRunning) {
+                    lastAppleMusicStatus = appleMusicRunning;
+                    if (appleMusicRunning) {
+                        sendToPico('SHOW_BUTTONS\n');
+                    } else {
+                        sendToPico('HIDE_BUTTONS\n');
+                    }
+                }
+            } catch (e) {
+                console.error('Apple Music status check failed', e);
+            }
+        }
+
+        // Poll every 2 seconds
+        setInterval(checkAppleMusicStatus, 2000);
+
+        // --- Serial Communication with Pico ---
+        async function connectToPico() {
+            if ('serial' in navigator) {
+                try {
+                    picoSerialPort = await navigator.serial.requestPort();
+                    await picoSerialPort.open({ baudRate: 115200 });
+                    picoWriter = picoSerialPort.writable.getWriter();
+                    console.log('Connected to Pico via serial');
+                } catch (e) {
+                    console.error('Failed to connect to Pico:', e);
+                }
+            } else {
+                alert('Web Serial API not supported in this browser.');
+            }
+        }
+
+        async function sendToPico(str) {
+            if (!picoWriter) return;
+            const encoder = new TextEncoder();
+            await picoWriter.write(encoder.encode(str));
+        }
+
+        // Add a button to connect to Pico
+        const picoBtn = document.createElement('button');
+        picoBtn.textContent = 'Connect to Pico';
+        picoBtn.onclick = connectToPico;
+        document.querySelector('.controls').appendChild(picoBtn);
+
+        // Add a button to toggle weather mode
+        const weatherBtn = document.createElement('button');
+        weatherBtn.textContent = 'Toggle Weather';
+        weatherBtn.onclick = async () => {
+            if (!picoWriter) {
+                alert('Please connect to Pico first.');
+                return;
+            }
+            try {
+                const res = await fetch('/api/weather');
+                const weather = await res.json();
+                if (weather.error) {
+                    alert('Failed to fetch weather: ' + weather.error);
+                    return;
+                }
+                // Send weather data to Pico
+                const msg = `WEATHER_TEMP:${weather.temp_f}\nWEATHER_HUMIDITY:${weather.humidity}\nWEATHER_WIND:${weather.wind_mph}\nWEATHER_DESC:${weather.description}\n`;
+                await sendToPico(msg);
+                // Then toggle weather display
+                await sendToPico('BTN:weather\n');
+            } catch (e) {
+                alert('Error fetching weather: ' + e.message);
+            }
+        };
+        document.querySelector('.controls').appendChild(weatherBtn);
+
+        // --- Detect Button Presses on Matrix ---
+        // Assume you have a function getMatrixButtonFromTouch(ledTouchPoint) that returns 'pause', 'next', or 'previous' if a button is pressed
+        function getMatrixButtonFromTouch(ledTouchPoint) {
+            // These values must match the button positions in board.ino
+            // Example: (adjust as needed)
+            const y = ledTouchPoint.y;
+            const x = ledTouchPoint.x;
+            // Button layout: [prev][pause][next] horizontally
+            if (y >= 15 && y <= 25) {
+                if (x >= 10 && x <= 18) return 'previous';
+                if (x >= 28 && x <= 36) return 'pause';
+                if (x >= 46 && x <= 54) return 'next';
+            }
+            return null;
+        }
+
+        let lastButton = null;
+        let lastButtonTime = 0;
+
+        async function handleMatrixTouch(ledTouchPoint) {
+            if (!appleMusicRunning) return;
+            const btn = getMatrixButtonFromTouch(ledTouchPoint);
+            if (btn && btn !== lastButton && Date.now() - lastButtonTime > 500) {
+                lastButton = btn;
+                lastButtonTime = Date.now();
+                let cmd = null;
+                if (btn === 'pause') cmd = 'playpause';
+                if (btn === 'next') cmd = 'next track';
+                if (btn === 'previous') cmd = 'previous track';
+                if (cmd) {
+                    await fetch('/api/apple_music/control', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ command: cmd })
+                    });
+                }
+            } else if (!btn) {
+                lastButton = null;
+            }
+        }
+
+        // --- Hook into your touch detection logic ---
+        // In your onResults or touch handler, call handleMatrixTouch(ledTouchPoint) when a touch is detected
+        // Example:
+        // if (ledMatrixEnabled && calibrationEnabled && calibrationPoints.length === 4 && currentTouchPoint) {
+        //     const ledTouchPoint = mapToLEDMatrix(currentTouchPoint, calibrationPoints);
+        //     handleMatrixTouch(ledTouchPoint);
+        // }
+
+        let currentSongInfo = { title: '', artist: '', state: 'stopped' };
+
+        async function pollAppleMusicInfo() {
+            try {
+                const res = await fetch('/api/apple_music/info');
+                const data = await res.json();
+                currentSongInfo = data;
+                updateSongInfoUI();
+                sendSongInfoToPico();
+            } catch (e) {
+                console.error('Failed to fetch Apple Music info', e);
+            }
+        }
+        setInterval(pollAppleMusicInfo, 2000);
+
+        function updateSongInfoUI() {
+            let songDiv = document.getElementById('song-info');
+            if (!songDiv) {
+                songDiv = document.createElement('div');
+                songDiv.id = 'song-info';
+                songDiv.style.position = 'fixed';
+                songDiv.style.bottom = '80px';
+                songDiv.style.left = '50%';
+                songDiv.style.transform = 'translateX(-50%)';
+                songDiv.style.background = '#222';
+                songDiv.style.color = '#fff';
+                songDiv.style.padding = '10px 20px';
+                songDiv.style.borderRadius = '8px';
+                songDiv.style.fontSize = '1.1em';
+                songDiv.style.zIndex = 10;
+                document.body.appendChild(songDiv);
+            }
+            songDiv.innerHTML = `<b>${currentSongInfo.title || ''}</b> - ${currentSongInfo.artist || ''} <span style="color:${currentSongInfo.state==='playing'?'#0f0':'#f00'}">[${currentSongInfo.state}]</span>`;
+        }
+
+        async function sendSongInfoToPico() {
+            if (!picoWriter) return;
+            const msg = `SONG:${currentSongInfo.title}\nARTIST:${currentSongInfo.artist}\nSTATE:${currentSongInfo.state}\n`;
+            await sendToPico(msg);
+        }
+
+        // Listen for button press events from Pico (bidirectional comms)
+        async function listenToPico() {
+            if (!picoSerialPort) return;
+            try {
+                while (picoSerialPort.readable) {
+                    const reader = picoSerialPort.readable.getReader();
+                    try {
+                        while (true) {
+                            const { value, done } = await reader.read();
+                            if (done) break;
+                            if (value) {
+                                const str = new TextDecoder().decode(value);
+                                if (str.startsWith('BTN:')) {
+                                    const btn = str.replace('BTN:', '').trim();
+                                    await fetch('/api/pico/button', {
+                                        method: 'POST',
+                                        headers: { 'Content-Type': 'application/json' },
+                                        body: JSON.stringify({ button: btn })
+                                    });
+                                }
+                            }
+                        }
+                    } finally {
+                        reader.releaseLock();
+                    }
+                }
+            } catch (e) {
+                console.error('Error reading from Pico serial:', e);
+            }
+        }
+
+        // Start listening after connecting
+        picoBtn.addEventListener('click', listenToPico);
+    </script>
+</body>
+
+</html>

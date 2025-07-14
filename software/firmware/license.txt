@@ -1,0 +1,2 @@
+License: Custom Source-Available License
+Summary: You may view the source, but you may not fork, modify, or redistribute it without written permission from the author.

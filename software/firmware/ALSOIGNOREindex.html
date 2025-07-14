@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HandWave Touch Detector</title>
+    <meta charset="UTF-8">
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: url('music-background.jpg');
+            background-size: cover;
+            background-repeat: no-repeat;
+            font-family: 'Arial', sans-serif;
+            color: #333;
+        }
+
+        h1 {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            text-align: center;
+            font-size: 3em;
+            color: #fff;
+            text-shadow: 2px 2px 5px #000;
+            font-family: 'Lobster', cursive;
+            letter-spacing: 2px;
+            padding: 10px 20px;
+            border-radius: 8px;
+            background-color: rgba(0, 0, 0, 0.7);
+        }
+
+        .wrapper {
+            display: flex;
+            align-items: center;
+            width: 90vw;
+            height: 70vh;
+            position: relative;
+        }
+
+        .video-container {
+            width: 100%;
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+
+        canvas,
+        video {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            -webkit-transform: scaleX(-1);
+            transform: scaleX(-1);
+        }
+
+        video {
+            opacity: 0;
+        }
+
+        .touch-indicator {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 30px 60px;
+            border-radius: 20px;
+            font-size: 48px;
+            font-weight: bold;
+            text-align: center;
+            z-index: 10;
+            border: 4px solid #007bff;
+            transition: all 0.3s ease;
+        }
+
+        .touch-indicator.touching {
+            background: rgba(0, 123, 255, 0.9);
+            color: white;
+            transform: translate(-50%, -50%) scale(1.1);
+            box-shadow: 0 0 30px rgba(0, 123, 255, 0.8);
+        }
+
+        .controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background: linear-gradient(to right, #007bff, #0056b3);
+            box-shadow: 0px -2px 5px rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+            z-index: 3;
+        }
+
+        .camera-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+            margin-right: 20px;
+            color: white;
+        }
+
+        .camera-container select {
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 2px solid #fff;
+            border-radius: 5px;
+            padding: 8px 12px;
+            font-size: 14px;
+            cursor: pointer;
+            outline: none;
+        }
+
+        .camera-container select option {
+            background-color: #333;
+            color: white;
+        }
+
+        .camera-container select:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        .camera-label {
+            margin-right: 10px;
+            white-space: nowrap;
+        }
+
+        button {
+            color: white;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease;
+            background-color: transparent;
+            border: 2px solid #fff;
+            margin: 5px;
+        }
+
+        button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+
+        #info-box {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 15px;
+            border-radius: 10px;
+            box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.3);
+            z-index: 10;
+            max-width: 300px;
+            font-family: inherit;
+            color: #333;
+        }
+
+        #info-box h2 {
+            margin-top: 0;
+        }
+
+        #info-box p {
+            margin-bottom: 1em;
+        }
+
+        #info-box button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        #info-box button:hover {
+            background-color: #0056b3;
+        }
+    </style>
+</head>
+
+<body>
+    <h1>HandWave Touch Detector</h1>
+    <div id="info-box">
+        <h2>Welcome to HandWave Touch Detector!</h2>
+        <p>This app detects when your hand touches the desk surface.</p>
+        <p>Point your index finger down to touch the desk.</p>
+        <p>The indicator will show when you're touching.</p>
+        <p>Made with ❤️ by Jeffrey!</p>
+
+        <button id="close-info">Got it!</button>
+    </div>
+    <div class="wrapper">
+        <div class="video-container">
+            <video id="videoElement"></video>
+            <canvas id="canvasElement"></canvas>
+        </div>
+        <div class="touch-indicator" id="touchIndicator">
+            <div id="touchStatus">NOT TOUCHING</div>
+        </div>
+    </div>
+    <div class="controls">
+        <div class="camera-container">
+            <label for="cameraSelect" class="camera-label">Camera:</label>
+            <select id="cameraSelect">
+                <option value="">Loading cameras...</option>
+            </select>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js"
+        crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"
+        crossorigin="anonymous"></script>
+
+    <script>
+        const infoBox = document.getElementById('info-box');
+        const closeInfoButton = document.getElementById('close-info');
+        const touchIndicator = document.getElementById('touchIndicator');
+        const touchStatus = document.getElementById('touchStatus');
+
+        closeInfoButton.addEventListener('click', () => {
+            infoBox.style.display = "none";
+        });
+
+        const videoElement = document.getElementById('videoElement');
+        const canvasElement = document.getElementById('canvasElement');
+        const canvasCtx = canvasElement.getContext('2d');
+
+        let isTouching = false;
+        let lastHandDetectionTime = 0;
+
+        // Camera selection functionality
+        let camera = null;
+        let availableCameras = [];
+        const cameraSelect = document.getElementById('cameraSelect');
+
+        // Request camera permissions and enumerate cameras
+        async function enumerateCameras() {
+            try {
+                // First, request camera permissions by trying to get user media
+                await navigator.mediaDevices.getUserMedia({ video: true });
+                
+                const devices = await navigator.mediaDevices.enumerateDevices();
+                const videoDevices = devices.filter(device => device.kind === 'videoinput');
+                
+                availableCameras = videoDevices;
+                cameraSelect.innerHTML = '';
+                
+                if (videoDevices.length === 0) {
+                    const option = document.createElement('option');
+                    option.value = '';
+                    option.textContent = 'No cameras found';
+                    cameraSelect.appendChild(option);
+                    return;
+                }
+                
+                videoDevices.forEach((device, index) => {
+                    const option = document.createElement('option');
+                    option.value = device.deviceId;
+                    option.textContent = device.label || `Camera ${index + 1}`;
+                    cameraSelect.appendChild(option);
+                });
+                
+                // Select the first camera by default
+                if (videoDevices.length > 0) {
+                    cameraSelect.value = videoDevices[0].deviceId;
+                    startCamera(videoDevices[0].deviceId);
+                }
+            } catch (error) {
+                console.error('Error enumerating cameras:', error);
+                if (error.name === 'NotAllowedError') {
+                    cameraSelect.innerHTML = '<option value="">Camera permission denied</option>';
+                } else {
+                    cameraSelect.innerHTML = '<option value="">Error loading cameras</option>';
+                }
+            }
+        }
+
+        // Refresh camera list
+        async function refreshCameras() {
+            cameraSelect.innerHTML = '<option value="">Refreshing...</option>';
+            await enumerateCameras();
+        }
+
+        // Add refresh button
+        const refreshButton = document.createElement('button');
+        refreshButton.textContent = '🔄';
+        refreshButton.title = 'Refresh cameras';
+        refreshButton.style.marginLeft = '10px';
+        refreshButton.style.padding = '8px 12px';
+        refreshButton.addEventListener('click', refreshCameras);
+        document.querySelector('.camera-container').appendChild(refreshButton);
+
+        // Start camera with specific device ID
+        async function startCamera(deviceId) {
+            if (camera) {
+                camera.stop();
+            }
+            
+            try {
+                const constraints = {
+                    video: {
+                        deviceId: deviceId ? { exact: deviceId } : undefined,
+                        width: { ideal: window.screen.width },
+                        height: { ideal: window.screen.height }
+                    }
+                };
+                
+                camera = new Camera(videoElement, {
+                    onFrame: async () => {
+                        await hands.send({ image: videoElement });
+                    },
+                    width: window.screen.width,
+                    height: window.screen.height,
+                    mediaConstraints: constraints
+                });
+                
+                camera.start();
+            } catch (error) {
+                console.error('Error starting camera:', error);
+                alert('Failed to start camera. Please try selecting a different camera.');
+            }
+        }
+
+        // Handle camera selection change
+        cameraSelect.addEventListener('change', (event) => {
+            const selectedDeviceId = event.target.value;
+            if (selectedDeviceId) {
+                startCamera(selectedDeviceId);
+            }
+        });
+
+        // Initialize camera enumeration
+        enumerateCameras();
+
+        function updateTouchStatus(touching) {
+            if (touching !== isTouching) {
+                isTouching = touching;
+                if (touching) {
+                    touchStatus.textContent = 'TOUCHING!';
+                    touchIndicator.classList.add('touching');
+                } else {
+                    touchStatus.textContent = 'NOT TOUCHING';
+                    touchIndicator.classList.remove('touching');
+                }
+            }
+        }
+
+        function onResults(results) {
+            lastHandDetectionTime = Date.now();
+
+            canvasCtx.save();
+            canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
+            canvasCtx.drawImage(results.image, 0, 0, canvasElement.width, canvasElement.height);
+
+            if (results.multiHandLandmarks && results.multiHandedness) {
+                let anyHandTouching = false;
+                
+                for (let i = 0; i < results.multiHandLandmarks.length; i++) {
+                    const landmarks = results.multiHandLandmarks[i];
+                    const classification = results.multiHandedness[i];
+                    const isLeftHand = classification.label === 'Left';
+
+                    // Check if any finger tip is touching the surface
+                    const touchThreshold = 0.8; // 80% down the frame
+                    
+                    // Check all finger tips (thumb, index, middle, ring, pinky)
+                    const fingerTips = [
+                        landmarks[4],  // thumb tip
+                        landmarks[8],  // index finger tip
+                        landmarks[12], // middle finger tip
+                        landmarks[16], // ring finger tip
+                        landmarks[20]  // pinky tip
+                    ];
+                    
+                    // Check if any finger tip is touching the surface
+                    for (let tip of fingerTips) {
+                        const tipY = tip.y * canvasElement.height;
+                        if (tipY > canvasElement.height * touchThreshold) {
+                            anyHandTouching = true;
+                            break;
+                        }
+                    }
+
+                    // Draw hand landmarks
+                    drawConnectors(canvasCtx, landmarks, HAND_CONNECTIONS,
+                        { color: isLeftHand ? '#00FF00' : '#FF0000', lineWidth: 5 });
+                    drawLandmarks(canvasCtx, landmarks, { color: isLeftHand ? '#FF0000' : '#00FF00', lineWidth: 2 });
+                }
+                
+                updateTouchStatus(anyHandTouching);
+            } else {
+                updateTouchStatus(false);
+            }
+            
+            canvasCtx.restore();
+        }
+
+        const hands = new Hands({
+            locateFile: (file) => {
+                return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
+            }
+        });
+        hands.setOptions({
+            maxNumHands: 2,
+            modelComplexity: 1,
+            minDetectionConfidence: 0.7,
+            minTrackingConfidence: 0.5
+        });
+        hands.onResults(onResults);
+
+        function resizeCanvas() {
+            canvasElement.width = videoElement.videoWidth;
+            canvasElement.height = videoElement.videoHeight;
+        }
+        videoElement.addEventListener('loadedmetadata', resizeCanvas);
+    </script>
+</body>
+
+</html>
