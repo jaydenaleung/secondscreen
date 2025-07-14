@@ -27,5 +27,7 @@ Case 2.0 (framework, which is the laptop I need :D )
 
 
 # Software
+Hard af lol. One of the most important peices to make and one of the hardest. Whether it's using computer vision to track approx. location of your finger on the matrix. Or whehter it's created a complex UI to render content, or even using psudo terminal commands to control the volume!
 
-Shlock do this 
+# Video Demo
+https://youtube.com/shorts/ZZUqsPvcY2g?si=fNzoMuIu14DnfsCS
